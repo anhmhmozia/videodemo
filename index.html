@@ -102,9 +102,11 @@
     <div class="btn" onclick="startRecord()">Record</div>
     <div class="btn" onclick="startImage()">Capture Image</div>
     <div class="btn" onclick="stopRecord()">Stop</div>
+    <div id='videos'></div>
     <div id="images"></div>
 
     <script>
+        var videos = document.getElementById('videos');
         var options = {
             controls: true,
             bigPlayButton: false,
@@ -151,9 +153,27 @@
         player.on('finishRecord', function() {
             // the blob object contains the recorded data that
             // can be downloaded by the user, stored on server etc.
-            player.record().saveAs({
-                'video': 'my-video'
-            });
+
+            var data = player.recordedData;
+            var serverUrl = 'https://hoynovelas.net/upload.php';
+            var formData = new FormData();
+            formData.append('file', data, data.name);
+            fetch(serverUrl, {
+                method: 'POST',
+                body: formData
+            })
+                .then((response) => response.json())
+                .then((data) => {
+                    if (data.status == 'OK') {
+                        const video = document.createElement('video');
+                        video.src = data.data;
+                        video.controls = true;
+                        video.muted = false;
+                        video.height = 240; // in px
+                        video.width = 320;
+                        videos.appendChild(video);
+                    }
+                });
         });
 
         function startRecord() {
@@ -171,10 +191,10 @@
             context.drawImage(player.record().mediaElement, 0, 0, canvas.width, canvas.height);
 
             // download image
-            canvas.toBlob(function(blob){
+            canvas.toBlob(function(blob) {
                 console.log(blob);
                 // send to server here..
-            },'image/png');
+            }, 'image/png');
         }
 
         function stopRecord() {
